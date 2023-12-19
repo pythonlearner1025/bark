@@ -502,7 +502,7 @@ def generate_text_semantic(
             probs = F.softmax(relevant_logits / temp, dim=-1)
             item_next = torch.multinomial(probs, num_samples=1).to(torch.int32)
             e3 = time.perf_counter()
-            print(f't3 {(e3-e2):7.2f}')
+            #print(f't3 {(e3-e2):7.2f}')
             if allow_early_stop and (
                 item_next == SEMANTIC_VOCAB_SIZE
                 or (min_eos_p is not None and probs[-1] >= min_eos_p)
@@ -511,6 +511,8 @@ def generate_text_semantic(
                 pbar.update(n - pbar_state)
                 break
             x = torch.cat((x, item_next[None]), dim=1)
+            e4 = time.perf_counter()
+            print(f't4 {(e4-e3):7.2f}')
             tot_generated_duration_s += 1 / SEMANTIC_RATE_HZ
             if max_gen_duration_s is not None and tot_generated_duration_s > max_gen_duration_s:
                 pbar.update(n - pbar_state)
@@ -526,6 +528,8 @@ def generate_text_semantic(
                     pbar.total = n
                 pbar.update(n - pbar_state)
             pbar_state = n
+            e5 = time.perf_counter()
+            print(f't5 {(e5-e4):7.2f}')
         pbar.total = n
         pbar.refresh()
         pbar.close()
