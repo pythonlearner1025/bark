@@ -510,6 +510,7 @@ def generate_text_semantic(
                 # eos found, so break
                 pbar.update(n - pbar_state)
                 break
+            print('f item dev {item_next[None].device}')
             x = torch.cat((x, item_next[None]), dim=1)
             e4 = time.perf_counter()
             print(f't4 {(e4-e3):7.2f}')
