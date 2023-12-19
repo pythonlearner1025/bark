@@ -474,7 +474,7 @@ def generate_text_semantic(
                 x_input, merge_context=True, use_cache=use_kv_caching, past_kv=kv_cache
             )
             e = time.perf_counter()
-            print(f'{(e-s):7.2f}')
+            print(f't1 {(e-s):7.2f}')
             relevant_logits = logits[0, 0, :SEMANTIC_VOCAB_SIZE]
             if allow_early_stop:
                 relevant_logits = torch.hstack(
@@ -493,6 +493,8 @@ def generate_text_semantic(
                 relevant_logits[sorted_indices[sorted_indices_to_remove]] = -np.inf
                 relevant_logits = torch.from_numpy(relevant_logits)
                 relevant_logits = relevant_logits.to(original_device)
+            e2 = time.perf_counter()
+            print(f't2 {(e2-e):7.2f}')
             if top_k is not None:
                 v, _ = torch.topk(relevant_logits, min(top_k, relevant_logits.size(-1)))
                 relevant_logits[relevant_logits < v[-1]] = -float("Inf")
@@ -513,6 +515,8 @@ def generate_text_semantic(
             if n == n_tot_steps - 1:
                 pbar.update(n - pbar_state)
                 break
+            e3 = time.perf_counter()
+            print(f't3 {(e3-e2):7.2f}')
             del logits, relevant_logits, probs, item_next
 
             if n > pbar_state:
