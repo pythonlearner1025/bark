@@ -17,6 +17,10 @@ from huggingface_hub import hf_hub_download
 from .model import GPTConfig, GPT
 from .model_fine import FineGPT, FineGPTConfig
 
+# TPU imports
+import torch_xla.distributed.xla_multiprocessing as xmp
+import torch_xla.core.xla_model as xm
+
 if (
     torch.cuda.is_available() and
     hasattr(torch.cuda, "amp") and
@@ -92,6 +96,7 @@ def _cast_bool_env_var(s):
 USE_SMALL_MODELS = _cast_bool_env_var(os.environ.get("SUNO_USE_SMALL_MODELS", "False"))
 GLOBAL_ENABLE_MPS = _cast_bool_env_var(os.environ.get("SUNO_ENABLE_MPS", "False"))
 OFFLOAD_CPU = _cast_bool_env_var(os.environ.get("SUNO_OFFLOAD_CPU", "False"))
+USE_TPU = _cast_bool_env_var(os.environ.get("USE_TPU", "True"))
 
 
 REMOTE_MODEL_PATHS = {
@@ -130,7 +135,10 @@ if not hasattr(torch.nn.functional, 'scaled_dot_product_attention') and torch.cu
 
 
 def _grab_best_device(use_gpu=True):
-    if torch.cuda.device_count() > 0 and use_gpu:
+    if USE_TPU:
+        device = xm.xla_device()
+        print(f'using device {device}')
+    elif torch.cuda.device_count() > 0 and use_gpu:
         device = "cuda"
     elif torch.backends.mps.is_available() and use_gpu and GLOBAL_ENABLE_MPS:
         device = "mps"
@@ -236,6 +244,7 @@ def _load_model(ckpt_path, device, use_small=False, model_type="text"):
     n_params = model.get_num_params()
     val_loss = checkpoint["best_val_loss"].item()
     logger.info(f"model loaded: {round(n_params/1e6,1)}M params, {round(val_loss,3)} loss")
+    model = xmp.MpModelWrapper(model)
     model.eval()
     model.to(device)
     del checkpoint, state_dict
@@ -252,11 +261,11 @@ def _load_model(ckpt_path, device, use_small=False, model_type="text"):
 def _load_codec_model(device):
     model = EncodecModel.encodec_model_24khz()
     model.set_target_bandwidth(6.0)
+    model = xmp.MpModelWrapper(model)
     model.eval()
     model.to(device)
     _clear_cuda_cache()
     return model
-
 
 def load_model(use_gpu=True, use_small=False, force_reload=False, model_type="text"):
     _load_model_f = funcy.partial(_load_model, model_type=model_type, use_small=use_small)
@@ -414,6 +423,7 @@ def generate_text_semantic(
     if OFFLOAD_CPU:
         model.to(models_devices["text"])
     device = next(model.parameters()).device
+    print(f'device {device} being used in generate_audio')
     if len(encoded_text) > 256:
         p = round((len(encoded_text) - 256) / len(encoded_text) * 100, 1)
         logger.warning(f"warning, text too long, lopping of last {p}%")
