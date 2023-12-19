@@ -19,6 +19,7 @@ from .model_fine import FineGPT, FineGPTConfig
 
 # TPU imports
 import torch_xla.distributed.xla_multiprocessing as xmp
+import torch_xla.utils.serialization as xser
 import torch_xla.core.xla_model as xm
 
 if (
@@ -217,7 +218,8 @@ def _load_model(ckpt_path, device, use_small=False, model_type="text"):
     if not os.path.exists(ckpt_path):
         logger.info(f"{model_type} model not found, downloading into `{CACHE_DIR}`.")
         _download(model_info["repo_id"], model_info["file_name"])
-    checkpoint = torch.load(ckpt_path, map_location='cpu')
+    checkpoint = xser.load(ckpt_path)     
+    #checkpoint = torch.load(ckpt_path, map_location='cpu')
     # this is a hack
     model_args = checkpoint["model_args"]
     if "input_vocab_size" not in model_args:
@@ -452,9 +454,8 @@ def generate_text_semantic(
             encoded_text, semantic_history, np.array([SEMANTIC_INFER_TOKEN])
         ]).astype(np.int64)
     )[None]
-    print(x.shape)
     assert x.shape[1] == 256 + 256 + 1
-    # TODO why is it so damn slow? 
+    #tensor cores are idle
     #with _inference_mode():
     with torch.no_grad():
         x = x.to(device)
