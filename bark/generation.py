@@ -382,7 +382,6 @@ def _load_history_prompt(history_prompt_input):
         raise ValueError("history prompt format unrecognized")
     return history_prompt
 
-
 def generate_text_semantic(
     text,
     history_prompt=None,
@@ -456,6 +455,7 @@ def generate_text_semantic(
     assert x.shape[1] == 256 + 256 + 1
     #tensor cores are idle
     #with _inference_mode():
+    import time
     with torch.no_grad():
         x = x.to(device)
         n_tot_steps = 768
@@ -469,9 +469,12 @@ def generate_text_semantic(
                 x_input = x[:, [-1]]
             else:
                 x_input = x
+            s = time.perf_counter() 
             logits, kv_cache = model(
                 x_input, merge_context=True, use_cache=use_kv_caching, past_kv=kv_cache
             )
+            e = time.perf_counter()
+            print(f'{(e-s):7.2f}')
             relevant_logits = logits[0, 0, :SEMANTIC_VOCAB_SIZE]
             if allow_early_stop:
                 relevant_logits = torch.hstack(
