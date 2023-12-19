@@ -19,7 +19,6 @@ from .model_fine import FineGPT, FineGPTConfig
 
 # TPU imports
 import torch_xla.distributed.xla_multiprocessing as xmp
-import torch_xla.utils.serialization as xser
 import torch_xla.core.xla_model as xm
 
 if (
@@ -218,8 +217,7 @@ def _load_model(ckpt_path, device, use_small=False, model_type="text"):
     if not os.path.exists(ckpt_path):
         logger.info(f"{model_type} model not found, downloading into `{CACHE_DIR}`.")
         _download(model_info["repo_id"], model_info["file_name"])
-    checkpoint = xser.load(ckpt_path)     
-    #checkpoint = torch.load(ckpt_path, map_location='cpu')
+    checkpoint = torch.load(ckpt_path, map_location='cpu')
     # this is a hack
     model_args = checkpoint["model_args"]
     if "input_vocab_size" not in model_args:
@@ -426,7 +424,8 @@ def generate_text_semantic(
         model.to(models_devices["text"])
     if USE_TPU:
         device = xm.xla_device()
-    print(f'device {device} being used in generate_audio')
+    print(f'input tensor device {device}')
+    print(f'model device {next(model.parameters()).device}')
     if len(encoded_text) > 256:
         p = round((len(encoded_text) - 256) / len(encoded_text) * 100, 1)
         logger.warning(f"warning, text too long, lopping of last {p}%")
