@@ -453,7 +453,8 @@ def generate_text_semantic(
         ]).astype(np.int64)
     )[None]
     assert x.shape[1] == 256 + 256 + 1
-    with _inference_mode():
+    #with _inference_mode():
+    with torch.no_grad():
         x = x.to(device)
         n_tot_steps = 768
         # custom tqdm updates since we don't know when eos will occur
