@@ -422,7 +422,8 @@ def generate_text_semantic(
     encoded_text = np.array(_tokenize(tokenizer, text)) + TEXT_ENCODING_OFFSET
     if OFFLOAD_CPU:
         model.to(models_devices["text"])
-    device = next(model.parameters()).device
+    if USE_TPU:
+        device = xm.xla_device()
     print(f'device {device} being used in generate_audio')
     if len(encoded_text) > 256:
         p = round((len(encoded_text) - 256) / len(encoded_text) * 100, 1)
