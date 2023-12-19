@@ -452,7 +452,9 @@ def generate_text_semantic(
             encoded_text, semantic_history, np.array([SEMANTIC_INFER_TOKEN])
         ]).astype(np.int64)
     )[None]
+    print(x.shape)
     assert x.shape[1] == 256 + 256 + 1
+    # TODO why is it so damn slow? 
     #with _inference_mode():
     with torch.no_grad():
         x = x.to(device)
