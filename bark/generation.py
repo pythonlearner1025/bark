@@ -496,10 +496,13 @@ def generate_text_semantic(
             e2 = time.perf_counter()
             print(f't2 {(e2-e):7.2f}')
             if top_k is not None:
+                print(relevant_logits.device)
                 v, _ = torch.topk(relevant_logits, min(top_k, relevant_logits.size(-1)))
                 relevant_logits[relevant_logits < v[-1]] = -float("Inf")
             probs = F.softmax(relevant_logits / temp, dim=-1)
             item_next = torch.multinomial(probs, num_samples=1).to(torch.int32)
+            e3 = time.perf_counter()
+            print(f't3 {(e3-e2):7.2f}')
             if allow_early_stop and (
                 item_next == SEMANTIC_VOCAB_SIZE
                 or (min_eos_p is not None and probs[-1] >= min_eos_p)
@@ -515,8 +518,7 @@ def generate_text_semantic(
             if n == n_tot_steps - 1:
                 pbar.update(n - pbar_state)
                 break
-            e3 = time.perf_counter()
-            print(f't3 {(e3-e2):7.2f}')
+        
             del logits, relevant_logits, probs, item_next
 
             if n > pbar_state:
