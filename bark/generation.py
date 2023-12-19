@@ -244,8 +244,8 @@ def _load_model(ckpt_path, device, use_small=False, model_type="text"):
     n_params = model.get_num_params()
     val_loss = checkpoint["best_val_loss"].item()
     logger.info(f"model loaded: {round(n_params/1e6,1)}M params, {round(val_loss,3)} loss")
-    model = xmp.MpModelWrapper(model)
     model.eval()
+    model = xmp.MpModelWrapper(model)
     model.to(device)
     del checkpoint, state_dict
     _clear_cuda_cache()
@@ -261,8 +261,8 @@ def _load_model(ckpt_path, device, use_small=False, model_type="text"):
 def _load_codec_model(device):
     model = EncodecModel.encodec_model_24khz()
     model.set_target_bandwidth(6.0)
-    model = xmp.MpModelWrapper(model)
     model.eval()
+    model = xmp.MpModelWrapper(model)
     model.to(device)
     _clear_cuda_cache()
     return model
