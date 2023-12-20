@@ -511,7 +511,10 @@ def generate_text_semantic(
                 pbar.update(n - pbar_state)
                 break
             print(f'item dev {item_next[None].device}')
+            x = x.to('cpu')
+            item_next[None] = item_next[None].to('cpu')
             x = torch.cat((x, item_next[None]), dim=1)
+            x = x.to(device)
             e4 = time.perf_counter()
             print(f't4 {(e4-e3):7.2f}')
             tot_generated_duration_s += 1 / SEMANTIC_RATE_HZ
