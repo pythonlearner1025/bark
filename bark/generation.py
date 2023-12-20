@@ -513,6 +513,8 @@ def generate_text_semantic(
             print(f'item dev {item_next[None].device}')
             x = x.to('cpu')
             item_next_cpu = item_next.to('cpu')
+            print(x.shape)
+            print(item_next_cpu[None].shape)
             x = torch.cat((x, item_next_cpu[None]), dim=1)
             x = x.to(device)
             e4 = time.perf_counter()
